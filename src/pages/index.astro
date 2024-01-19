@@ -1,0 +1,75 @@
+---
+
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Worldcoo Kiosk</title>
+  </head>
+  <body class="bg-beige h-screen flex flex-col justify-center items-center">
+    <div class="font-bold text-7xl size-fit text-center">
+      <span id="totalCounter"></span> €
+    </div>
+  </body>
+</html>
+
+<script type="module" async>
+  const counter = document.getElementById("totalCounter");
+
+  const updateCounter = (amount) => {
+    counter.innerHTML = Intl.NumberFormat("ca", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      currency: "EUR",
+    }).format(amount);
+  };
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  while (true) {
+    const now = new Date().getTime();
+    const serverResponse = await fetch(
+      "https://459yv0cj03.execute-api.eu-west-1.amazonaws.com/donations",
+    );
+    const { donations, total } = await serverResponse.json();
+
+    const timeToNextDonationsRequestInSeconds = +/\d+/g.exec(
+      serverResponse.headers.get("cache-control"),
+    )[0];
+    let totalAmountTillNow =
+      donations
+        .filter((d) => new Date(d.date).getTime() <= now)
+        .reduce((acc, d) => acc + d.amount, 0) + total;
+    updateCounter(totalAmountTillNow);
+    const newDonationsUpdates = donations
+      .filter((d) => new Date(d.date).getTime() > now)
+      .map((d) => {
+        return new Promise((resolve) =>
+          setTimeout(
+            () => {
+              totalAmountTillNow += d.amount;
+              updateCounter(totalAmountTillNow);
+              resolve();
+            },
+            new Date(d.date).getTime() - now,
+          ),
+        );
+      });
+
+    await Promise.all([
+      Promise.all(newDonationsUpdates),
+      sleep(timeToNextDonationsRequestInSeconds * 1000),
+    ]);
+  }
+</script>
+
+<style is:global>
+  @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+  body {
+    font-family: "Quicksand", sans-serif;
+  }
+</style>

@@ -1,0 +1,1 @@
+# Kiosk counter for Worldcoo
