@@ -11,35 +11,63 @@
     <title>Worldcoo Kiosk</title>
   </head>
   <body class="bg-beige h-screen flex flex-col justify-center items-center">
-    <div class="font-bold text-4xl lg:text-8xl size-fit text-center">
-      <span id="totalCounter"></span> €
+    <div class="font-semibold text-4xl lg:text-8xl size-fit text-center tracking-[-.1em]">
+      <span id="totalCounter" class="-mr-6"></span> €
     </div>
   </body>
 </html>
 
-<script type="module" async>
-  const counter = document.getElementById("totalCounter");
+<script>
+  import { CountUp } from 'countup.js';
+  import { Odometer } from 'odometer_countup';
+  import confetti from 'canvas-confetti';
 
-  const updateCounter = (amount) => {
-    counter.innerHTML = Intl.NumberFormat("ca", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      currency: "EUR",
-    }).format(amount);
+  let previousAmount = 0;
+  const goalToThrowConfetti = 10000;
+
+  const counter = new CountUp(
+    'totalCounter',
+    0,
+    {
+      startVal: 0,
+      decimalPlaces: 2,
+      separator: ".",
+      decimal: ",",
+      plugin: new Odometer({ duration: 2.3, lastDigitDelay: 0 }),
+      duration: 3.0,
+    }
+  );
+
+  if (!counter.error) {
+    counter.start();
+  } else {
+    console.error(counter.error);
+  }
+
+  const updateCounter = (amount: number) => {
+    counter.update(amount);
+
+    // Show confetti at the end of counter animation
+    if (previousAmount !== 0 && Math.round(previousAmount) % goalToThrowConfetti === 0) {
+      confetti({ particleCount: 150, spread: 180 })
+    }
+
+    previousAmount = amount;
   };
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   while (true) {
     const now = new Date().getTime();
     const serverResponse = await fetch(
       "https://459yv0cj03.execute-api.eu-west-1.amazonaws.com/donations",
     );
-    const { donations, total } = await serverResponse.json();
+    const { donations, total } = await serverResponse.json() as { donations: { amount: number, date: string }[], total: number };
 
     const timeToNextDonationsRequestInSeconds = +/\d+/g.exec(
-      serverResponse.headers.get("cache-control"),
-    )[0];
+      serverResponse.headers.get("cache-control")!,
+    )![0];
+
     let totalAmountTillNow =
       donations
         .filter((d) => new Date(d.date).getTime() <= now)
@@ -53,7 +81,7 @@
             () => {
               totalAmountTillNow += d.amount;
               updateCounter(totalAmountTillNow);
-              resolve();
+              resolve(void 0);
             },
             new Date(d.date).getTime() - now,
           ),
@@ -68,8 +96,8 @@
 </script>
 
 <style is:global>
-  @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Sono:wght@300;400;500;600;700&display=swap");
   body {
-    font-family: "Quicksand", sans-serif;
+    font-family: "Sono", sans-serif;
   }
 </style>
