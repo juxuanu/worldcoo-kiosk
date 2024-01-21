@@ -1,5 +1,5 @@
 ---
-
+import Chart from '../components/Chart.tsx';
 ---
 
 <html lang="en">
@@ -10,9 +10,13 @@
     <meta name="generator" content={Astro.generator} />
     <title>Worldcoo Kiosk</title>
   </head>
-  <body class="bg-beige h-screen flex flex-col justify-center items-center">
-    <div class="font-bold text-4xl lg:text-8xl size-fit text-center tracking-tighter">
+  <body class="bg-beige h-dvh flex flex-col items-center">
+    <div class="font-bold text-4xl lg:text-8xl size-fit text-center tracking-tighter mt-auto">
       <span id="totalCounter"></span> €
+    </div>
+
+    <div class="mt-auto h-[200px] w-full">
+      <Chart client:only="react" />
     </div>
   </body>
 </html>
@@ -21,8 +25,9 @@
   import { CountUp } from 'countup.js';
   import { Odometer } from 'odometer_countup';
   import confetti from 'canvas-confetti';
+  import { $donations } from '../components/store.ts';
 
-  let previousAmount = 0;
+  let previousTotal = 0;
   const goalToThrowConfetti = 10000;
 
   const counter = new CountUp(
@@ -44,21 +49,40 @@
     console.error(counter.error);
   }
 
-  const updateCounter = (amount: number) => {
-    counter.update(amount);
+  const updateCounter = (total: number) => {
+    counter.update(total);
 
     // Show confetti at the end of counter animation
-    if (previousAmount !== 0 && Math.round(previousAmount) % goalToThrowConfetti === 0) {
+    if (previousTotal !== 0 && Math.round(previousTotal) % goalToThrowConfetti === 0) {
       confetti({ particleCount: 150, spread: 180 })
     }
 
-    previousAmount = amount;
+    previousTotal = total;
+  };
+
+  const updateChart = (now: Date, date: string, amount: number) => {
+    const lastDonations = $donations.get();
+    const lastDonationDate = lastDonations[lastDonations.length - 1]?.date ? new Date(lastDonations[lastDonations.length - 1].date) : undefined
+
+    // Clean chart every day
+    if (
+      !lastDonationDate ||
+      lastDonationDate.getFullYear() !== now.getFullYear() ||
+      lastDonationDate.getMonth() !== now.getMonth() ||
+      lastDonationDate.getDate() !== now.getDate()) {
+      $donations.set([{ date, amount }]);
+      localStorage.setItem('donations', JSON.stringify([{ date, amount }]));
+    } else {
+      const donations = [...lastDonations, { date, amount }]
+      $donations.set(donations);
+      localStorage.setItem('donations', JSON.stringify(donations));
+    }
   };
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   while (true) {
-    const now = new Date().getTime();
+    const now = new Date();
     const serverResponse = await fetch(
       "https://459yv0cj03.execute-api.eu-west-1.amazonaws.com/donations",
     );
@@ -70,20 +94,21 @@
 
     let totalAmountTillNow =
       donations
-        .filter((d) => new Date(d.date).getTime() <= now)
+        .filter((d) => new Date(d.date) <= now)
         .reduce((acc, d) => acc + d.amount, 0) + total;
     updateCounter(totalAmountTillNow);
     const newDonationsUpdates = donations
-      .filter((d) => new Date(d.date).getTime() > now)
+      .filter((d) => new Date(d.date) > now)
       .map((d) => {
         return new Promise((resolve) =>
           setTimeout(
             () => {
               totalAmountTillNow += d.amount;
               updateCounter(totalAmountTillNow);
+              updateChart(now, d.date, d.amount);
               resolve(void 0);
             },
-            new Date(d.date).getTime() - now,
+            new Date(d.date).getTime() - now.getTime(),
           ),
         );
       });
