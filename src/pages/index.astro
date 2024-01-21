@@ -29,12 +29,13 @@ import Chart from '../components/chart.tsx';
 
   let previousTotal = 0;
   const goalToThrowConfetti = 10000;
+  const baseTotal = 14_239_900;
 
   const counter = new CountUp(
     'totalCounter',
-    0,
+    baseTotal,
     {
-      startVal: 0,
+      startVal: baseTotal,
       decimalPlaces: 2,
       separator: ".",
       decimal: ",",
