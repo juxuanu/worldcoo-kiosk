@@ -2,6 +2,8 @@ import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { $donations } from "./store.ts";
 import { useStore } from "@nanostores/react";
 
+const padStart = (number: number) => number.toString().padStart(2, "0");
+
 export default function Chart() {
   const donations = useStore($donations);
 
@@ -16,7 +18,7 @@ export default function Chart() {
     .map((hour) => every10min.map((minute) => ({ hour, minute })))
     .flat()
     .map(({ hour, minute }) => ({
-      time: `${thisYear}-${thisMonth}-${thisDate} ${hour}:${minute}`,
+      time: `${thisYear}-${padStart(thisMonth)}-${padStart(thisDate)} ${padStart(hour)}:${padStart(minute)}`,
       amount: donations
         .filter((donation) => {
           const date = new Date(donation.date);
