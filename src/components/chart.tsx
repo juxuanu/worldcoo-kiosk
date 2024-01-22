@@ -18,7 +18,10 @@ export default function Chart() {
     .map((hour) => every10min.map((minute) => ({ hour, minute })))
     .flat()
     .map(({ hour, minute }) => ({
-      time: `${thisYear}-${padStart(thisMonth)}-${padStart(thisDate)} ${padStart(hour)}:${padStart(minute)}`,
+      time:
+        `${thisYear}-${padStart(thisMonth)}-${padStart(thisDate)}` +
+        ` ${padStart(hour)}:${padStart(minute)}` +
+        `-${padStart(minute + 10 === 60 ? hour + 1 : hour)}:${padStart(minute + 10 === 60 ? 0 : minute + 10)}`,
       amount: donations
         .filter((donation) => {
           const date = new Date(donation.date);
