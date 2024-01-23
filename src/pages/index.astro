@@ -1,5 +1,6 @@
 ---
 import Chart from '../components/chart.tsx';
+import image from '../components/worldcoo_logo_full_dark-1-1024x575.png'
 ---
 
 <html lang="en">
@@ -10,8 +11,9 @@ import Chart from '../components/chart.tsx';
     <meta name="generator" content={Astro.generator} />
     <title>Worldcoo Kiosk</title>
   </head>
-  <body class="bg-beige h-screen flex flex-col items-center">
-    <div class="font-bold text-4xl lg:text-8xl size-fit text-center tracking-tighter mt-auto">
+  <body class="bg-[#fae7c7] h-screen flex flex-col items-center">
+    <img src={image.src} width={400} height={224} class="mt-8" />
+    <div class="font-bold text-6xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto">
       <span id="totalCounter"></span> €
     </div>
 
