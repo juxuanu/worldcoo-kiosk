@@ -1,4 +1,16 @@
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  CartesianGrid,
+  YAxis,
+  Legend,
+  Bar,
+  ReferenceLine,
+} from "recharts";
 import { $donations } from "./store.ts";
 import { useStore } from "@nanostores/react";
 
@@ -39,23 +51,16 @@ export default function Chart() {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart width={500} height={400} data={data}>
-        <defs>
-          <linearGradient id="color" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#f18f45" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#f18f45" stopOpacity={0} />
-          </linearGradient>
-        </defs>
+      <BarChart width={730} height={250} data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0 0 0 / 15%)" />
         <XAxis dataKey="time" display="none" />
+        <YAxis />
         <Tooltip />
-        <Area
-          type="monotone"
-          dataKey="amount"
-          stroke="#f18f45"
-          fillOpacity={1}
-          fill="url(#color)"
-        />
-      </AreaChart>
+        <ReferenceLine x={`2024-01-24 06:00-06:10`} stroke="#f18f45" />
+        <ReferenceLine x={`2024-01-24 12:00-12:10`} stroke="#f18f45" />
+        <ReferenceLine x={`2024-01-24 18:00-18:10`} stroke="#f18f45" />
+        <Bar dataKey="amount" fill="#f18f45" />
+      </BarChart>
     </ResponsiveContainer>
   );
 }

@@ -1,6 +1,6 @@
 ---
 import Chart from '../components/chart.tsx';
-import image from '../components/worldcoo_logo_full_dark-1-1024x575.png'
+import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
 ---
 
 <html lang="en">
@@ -12,12 +12,12 @@ import image from '../components/worldcoo_logo_full_dark-1-1024x575.png'
     <title>Worldcoo Kiosk</title>
   </head>
   <body class="bg-[#fae7c7] h-screen flex flex-col items-center">
-    <img src={image.src} width={400} height={224} class="mt-8" />
-    <div class="font-bold text-6xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto">
+    <img src={image.src} width={image.width / 3} height={image.height / 3} class="mt-8" />
+    <div class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto">
       <span id="totalCounter"></span> €
     </div>
 
-    <div class="mt-auto h-[200px] w-full">
+    <div class="mt-auto mr-12 h-48 w-full">
       <Chart client:only="react" />
     </div>
   </body>
@@ -109,11 +109,11 @@ import image from '../components/worldcoo_logo_full_dark-1-1024x575.png'
               totalAmountTillNow += d.amount;
               updateCounter(totalAmountTillNow);
               updateChart(now, d.date, d.amount);
-              resolve(void 0);
+              resolve(undefined);
             },
             new Date(d.date).getTime() - now.getTime(),
           ),
-        );
+        );``
       });
 
     await Promise.all([
