@@ -1,6 +1,6 @@
 ---
-import Chart from '../components/chart.tsx';
-import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
+import Chart from "../components/chart.tsx";
+import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
 ---
 
 <html lang="en">
@@ -12,8 +12,15 @@ import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
     <title>Worldcoo Kiosk</title>
   </head>
   <body class="bg-[#fae7c7] h-screen flex flex-col items-center">
-    <img src={image.src} width={image.width / 3} height={image.height / 3} class="mt-8" />
-    <div class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto">
+    <img
+      src={image.src}
+      width={image.width / 3}
+      height={image.height / 3}
+      class="mt-8"
+    />
+    <div
+      class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto"
+    >
       <span id="totalCounter"></span> €
     </div>
 
@@ -24,40 +31,39 @@ import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
 </html>
 
 <script>
-  import { CountUp } from 'countup.js';
-  import { Odometer } from 'odometer_countup';
-  import confetti from 'canvas-confetti';
-  import { $donations } from '../components/store.ts';
+  import { CountUp } from "countup.js";
+  import { Odometer } from "odometer_countup";
+  import confetti from "canvas-confetti";
+  import { $donations } from "../components/store.ts";
 
   let previousTotal = 0;
   const goalToThrowConfetti = 10000;
   const baseTotal = 14_239_900;
 
-  const counter = new CountUp(
-    'totalCounter',
-    baseTotal,
-    {
-      startVal: baseTotal,
-      decimalPlaces: 2,
-      separator: ".",
-      decimal: ",",
-      plugin: new Odometer({ duration: 2.3, lastDigitDelay: 0 }),
-      duration: 3.0,
-    }
-  );
+  const counter = new CountUp("totalCounter", baseTotal, {
+    startVal: baseTotal,
+    decimalPlaces: 2,
+    separator: ".",
+    decimal: ",",
+    plugin: new Odometer({ duration: 2.3, lastDigitDelay: 0 }),
+    duration: 3.0,
+  });
 
   if (!counter.error) {
-    counter.start();
+    counter.start();
   } else {
-    console.error(counter.error);
+    console.error(counter.error);
   }
 
   const updateCounter = (total: number) => {
     counter.update(total);
 
     // Show confetti at the end of counter animation
-    if (previousTotal !== 0 && Math.round(previousTotal) % goalToThrowConfetti === 0) {
-      confetti({ particleCount: 150, spread: 180 })
+    if (
+      previousTotal !== 0 &&
+      Math.round(previousTotal) % goalToThrowConfetti === 0
+    ) {
+      confetti({ particleCount: 150, spread: 180 });
     }
 
     previousTotal = total;
@@ -65,31 +71,38 @@ import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
 
   const updateChart = (now: Date, date: string, amount: number) => {
     const lastDonations = $donations.get();
-    const lastDonationDate = lastDonations[lastDonations.length - 1]?.date ? new Date(lastDonations[lastDonations.length - 1].date) : undefined
+    const lastDonationDate = lastDonations[lastDonations.length - 1]?.date
+      ? new Date(lastDonations[lastDonations.length - 1].date)
+      : undefined;
 
     // Clean chart every day
     if (
       !lastDonationDate ||
       lastDonationDate.getFullYear() !== now.getFullYear() ||
       lastDonationDate.getMonth() !== now.getMonth() ||
-      lastDonationDate.getDate() !== now.getDate()) {
+      lastDonationDate.getDate() !== now.getDate()
+    ) {
       $donations.set([{ date, amount }]);
-      localStorage.setItem('donations', JSON.stringify([{ date, amount }]));
+      localStorage.setItem("donations", JSON.stringify([{ date, amount }]));
     } else {
-      const donations = [...lastDonations, { date, amount }]
+      const donations = [...lastDonations, { date, amount }];
       $donations.set(donations);
-      localStorage.setItem('donations', JSON.stringify(donations));
+      localStorage.setItem("donations", JSON.stringify(donations));
     }
   };
 
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   while (true) {
     const now = new Date();
     const serverResponse = await fetch(
       "https://459yv0cj03.execute-api.eu-west-1.amazonaws.com/donations",
     );
-    const { donations, total } = await serverResponse.json() as { donations: { amount: number, date: string }[], total: number };
+    const { donations, total } = (await serverResponse.json()) as {
+      donations: { amount: number; date: string }[];
+      total: number;
+    };
 
     const timeToNextDonationsRequestInSeconds = +/\d+/g.exec(
       serverResponse.headers.get("cache-control")!,
@@ -113,7 +126,8 @@ import image from '../components/assets/worldcoo_logo_full_dark-1-1024x575.png'
             },
             new Date(d.date).getTime() - now.getTime(),
           ),
-        );``
+        );
+        ``;
       });
 
     await Promise.all([
