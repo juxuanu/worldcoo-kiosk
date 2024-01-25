@@ -20,7 +20,7 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
     />
     <div
       id="counter"
-      class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto"
+      class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
     >
       <span id="totalCounter"></span> €
     </div>
@@ -156,10 +156,19 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
   #counter::after {
     content: '';
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: -2px; /* Avoid floating point number artifacts on responsive */
+    bottom: -2px; /* Avoid floating point number artifacts on responsive */
     left: -40px;
     right: -40px;
     box-shadow: inset 0px 0px 10px 10px #fae7c7;
+  }
+
+  @media screen and (max-width: 1024px) {
+    .odometer-numbers {
+      padding: 4px;
+    }
+    #counter::after {
+      box-shadow: inset 0px 0px 4px 4px #fae7c7;
+    }
   }
 </style>
