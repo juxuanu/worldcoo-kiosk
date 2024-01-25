@@ -19,12 +19,13 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
       class="mt-8"
     />
     <div
+      id="counter"
       class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto"
     >
       <span id="totalCounter"></span> €
     </div>
 
-    <div class="mt-auto mr-12 h-48 w-full">
+    <div class="mt-auto mr-12 h-96 w-full">
       <Chart client:only="react" />
     </div>
   </body>
@@ -145,6 +146,20 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
 
   /* Don't cut the comma */
   .odometer-numbers {
-    padding: 2px;
+    padding: 20px;
+  }
+
+  #counter {
+    position: relative;
+  }
+
+  #counter::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -40px;
+    right: -40px;
+    box-shadow: inset 0px 0px 10px 10px #fae7c7;
   }
 </style>
