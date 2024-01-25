@@ -1,5 +1,6 @@
 ---
-
+import Chart from "../components/chart.tsx";
+import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
 ---
 
 <html lang="en">
@@ -10,54 +11,124 @@
     <meta name="generator" content={Astro.generator} />
     <title>Worldcoo Kiosk</title>
   </head>
-  <body class="bg-beige h-screen flex flex-col justify-center items-center">
-    <div class="font-bold text-4xl lg:text-8xl size-fit text-center">
+  <body class="bg-[#fae7c7] h-screen flex flex-col items-center">
+    <img
+      src={image.src}
+      width={image.width / 3}
+      height={image.height / 3}
+      class="mt-8"
+    />
+    <div
+      id="counter"
+      class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
+    >
       <span id="totalCounter"></span> €
+    </div>
+
+    <div class="mt-auto mr-12 h-96 w-full">
+      <Chart client:only="react" />
     </div>
   </body>
 </html>
 
-<script type="module" async>
-  const counter = document.getElementById("totalCounter");
+<script>
+  import { CountUp } from "countup.js";
+  import { Odometer } from "odometer_countup";
+  import confetti from "canvas-confetti";
+  import { $donations } from "../components/store.ts";
 
-  const updateCounter = (amount) => {
-    counter.innerHTML = Intl.NumberFormat("ca", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      currency: "EUR",
-    }).format(amount);
+  let previousTotal = 0;
+  const goalToThrowConfetti = 10000;
+  const baseTotal = 14_239_900;
+
+  const counter = new CountUp("totalCounter", baseTotal, {
+    startVal: baseTotal,
+    decimalPlaces: 2,
+    separator: ".",
+    decimal: ",",
+    plugin: new Odometer({ duration: 2.3, lastDigitDelay: 0 }),
+    duration: 3.0,
+  });
+
+  if (!counter.error) {
+    counter.start();
+  } else {
+    console.error(counter.error);
+  }
+
+  const updateCounter = (total: number) => {
+    counter.update(total);
+
+    // Show confetti at the end of counter animation
+    if (
+      previousTotal !== 0 &&
+      Math.round(previousTotal) % goalToThrowConfetti === 0
+    ) {
+      confetti({ particleCount: 150, spread: 180 });
+    }
+
+    previousTotal = total;
   };
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const updateChart = (now: Date, date: string, amount: number) => {
+    const lastDonations = $donations.get();
+    const lastDonationDate = lastDonations[lastDonations.length - 1]?.date
+      ? new Date(lastDonations[lastDonations.length - 1].date)
+      : undefined;
+
+    // Clean chart every day
+    if (
+      !lastDonationDate ||
+      lastDonationDate.getFullYear() !== now.getFullYear() ||
+      lastDonationDate.getMonth() !== now.getMonth() ||
+      lastDonationDate.getDate() !== now.getDate()
+    ) {
+      $donations.set([{ date, amount }]);
+      localStorage.setItem("donations", JSON.stringify([{ date, amount }]));
+    } else {
+      const donations = [...lastDonations, { date, amount }];
+      $donations.set(donations);
+      localStorage.setItem("donations", JSON.stringify(donations));
+    }
+  };
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   while (true) {
-    const now = new Date().getTime();
+    const now = new Date();
     const serverResponse = await fetch(
       "https://459yv0cj03.execute-api.eu-west-1.amazonaws.com/donations",
     );
-    const { donations, total } = await serverResponse.json();
+    const { donations, total } = (await serverResponse.json()) as {
+      donations: { amount: number; date: string }[];
+      total: number;
+    };
 
     const timeToNextDonationsRequestInSeconds = +/\d+/g.exec(
-      serverResponse.headers.get("cache-control"),
-    )[0];
+      serverResponse.headers.get("cache-control")!,
+    )![0];
+
     let totalAmountTillNow =
       donations
-        .filter((d) => new Date(d.date).getTime() <= now)
+        .filter((d) => new Date(d.date) <= now)
         .reduce((acc, d) => acc + d.amount, 0) + total;
     updateCounter(totalAmountTillNow);
     const newDonationsUpdates = donations
-      .filter((d) => new Date(d.date).getTime() > now)
+      .filter((d) => new Date(d.date) > now)
       .map((d) => {
         return new Promise((resolve) =>
           setTimeout(
             () => {
               totalAmountTillNow += d.amount;
               updateCounter(totalAmountTillNow);
-              resolve();
+              updateChart(now, d.date, d.amount);
+              resolve(undefined);
             },
-            new Date(d.date).getTime() - now,
+            new Date(d.date).getTime() - now.getTime(),
           ),
         );
+        ``;
       });
 
     await Promise.all([
@@ -71,5 +142,33 @@
   @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
   body {
     font-family: "Quicksand", sans-serif;
+  }
+
+  /* Don't cut the comma */
+  .odometer-numbers {
+    padding: 20px;
+  }
+
+  #counter {
+    position: relative;
+  }
+
+  #counter::after {
+    content: '';
+    position: absolute;
+    top: -2px; /* Avoid floating point number artifacts on responsive */
+    bottom: -2px; /* Avoid floating point number artifacts on responsive */
+    left: -40px;
+    right: -40px;
+    box-shadow: inset 0px 0px 10px 10px #fae7c7;
+  }
+
+  @media screen and (max-width: 1024px) {
+    .odometer-numbers {
+      padding: 4px;
+    }
+    #counter::after {
+      box-shadow: inset 0px 0px 4px 4px #fae7c7;
+    }
   }
 </style>
