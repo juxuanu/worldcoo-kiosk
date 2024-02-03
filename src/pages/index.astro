@@ -1,6 +1,8 @@
 ---
 import Chart from "../components/chart.tsx";
 import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
+
+const baseTotal = 17_472_152.23;
 ---
 
 <html lang="en">
@@ -20,9 +22,9 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
     />
     <div
       id="counter"
-      class="font-bold text-5xl lg:text-[160px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
+      class="font-bold text-5xl lg:text-[132px] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
     >
-      <span id="totalCounter"></span> €
+      <span id="totalCounter" data-total={baseTotal}>{baseTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> €
     </div>
 
     <div class="mt-auto mr-12 h-96 w-full">
@@ -35,19 +37,21 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
   import { CountUp } from "countup.js";
   import { Odometer } from "odometer_countup";
   import confetti from "canvas-confetti";
-  import { $donations } from "../components/store.ts";
+  import { $donation } from "../components/store.ts";
 
   let previousTotal = 0;
   const goalToThrowConfetti = 10000;
-  const baseTotal = 14_239_900;
 
-  const counter = new CountUp("totalCounter", baseTotal, {
-    startVal: baseTotal,
+  const totalCounter = document.getElementById("totalCounter")!;
+  const totalCounterTotal = Number(totalCounter.dataset.total);
+
+  const counter = new CountUp(totalCounter, totalCounterTotal, {
+    startVal: totalCounterTotal,
     decimalPlaces: 2,
     separator: ".",
     decimal: ",",
-    plugin: new Odometer({ duration: 2.3, lastDigitDelay: 0 }),
-    duration: 3.0,
+    plugin: new Odometer({ lastDigitDelay: 0 }),
+    duration: 0.05
   });
 
   if (!counter.error) {
@@ -68,28 +72,6 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
     }
 
     previousTotal = total;
-  };
-
-  const updateChart = (now: Date, date: string, amount: number) => {
-    const lastDonations = $donations.get();
-    const lastDonationDate = lastDonations[lastDonations.length - 1]?.date
-      ? new Date(lastDonations[lastDonations.length - 1].date)
-      : undefined;
-
-    // Clean chart every day
-    if (
-      !lastDonationDate ||
-      lastDonationDate.getFullYear() !== now.getFullYear() ||
-      lastDonationDate.getMonth() !== now.getMonth() ||
-      lastDonationDate.getDate() !== now.getDate()
-    ) {
-      $donations.set([{ date, amount }]);
-      localStorage.setItem("donations", JSON.stringify([{ date, amount }]));
-    } else {
-      const donations = [...lastDonations, { date, amount }];
-      $donations.set(donations);
-      localStorage.setItem("donations", JSON.stringify(donations));
-    }
   };
 
   const sleep = (ms: number) =>
@@ -122,7 +104,7 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
             () => {
               totalAmountTillNow += d.amount;
               updateCounter(totalAmountTillNow);
-              updateChart(now, d.date, d.amount);
+              $donation.set(d);
               resolve(undefined);
             },
             new Date(d.date).getTime() - now.getTime(),
@@ -146,7 +128,7 @@ import image from "../components/assets/worldcoo_logo_full_dark-1-1024x575.png";
 
   /* Don't cut the comma */
   .odometer-numbers {
-    padding: 20px;
+    padding: 16px;
   }
 
   #counter {
