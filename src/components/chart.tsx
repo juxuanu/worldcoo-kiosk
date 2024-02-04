@@ -13,10 +13,14 @@ import { useStore } from "@nanostores/react";
 import { useEffect, useState } from "react";
 
 const padStart = (number: number) => number.toString().padStart(2, "0");
+const getYYYYMMDD = (date: Date) =>
+  `${date.getFullYear()}-${padStart(date.getMonth() + 1)}-${padStart(date.getDate())}`;
 
 export default function Chart() {
+  const now = new Date();
+
   const [period, setPeriod] = useState<Record<string, number>>(
-    JSON.parse(localStorage.getItem("period") ?? "{}"),
+    JSON.parse(localStorage.getItem(`period-${getYYYYMMDD(now)}`) ?? "{}"),
   );
   const donation = useStore($donation);
 
@@ -24,17 +28,13 @@ export default function Chart() {
     if (!donation) return;
 
     const date = new Date(donation.date);
-
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
     const hour = date.getHours();
     const minutesOnBlockOf10 = Math.floor(date.getMinutes() / 10) * 10;
 
     const periodKey =
-      `${year}-${padStart(month)}-${padStart(day)}` +
-      ` ${padStart(hour)}:${padStart(minutesOnBlockOf10)}` +
-      `-${padStart(minutesOnBlockOf10 + 10 === 60 ? hour + 1 : hour)}:${padStart(minutesOnBlockOf10 + 10 === 60 ? 0 : minutesOnBlockOf10 + 10)}`;
+      `${padStart(hour)}:${padStart(minutesOnBlockOf10)}` +
+      `-${padStart(minutesOnBlockOf10 + 10 === 60 ? hour + 1 : hour)}` +
+      `:${padStart(minutesOnBlockOf10 + 10 === 60 ? 0 : minutesOnBlockOf10 + 10)}`;
 
     const updatedPeriod = {
       ...period,
@@ -46,7 +46,10 @@ export default function Chart() {
     };
 
     setPeriod(updatedPeriod);
-    localStorage.setItem("period", JSON.stringify(updatedPeriod));
+    localStorage.setItem(
+      `period-${getYYYYMMDD(date)}`,
+      JSON.stringify(updatedPeriod),
+    );
   }, [donation]);
 
   return (
@@ -55,7 +58,7 @@ export default function Chart() {
         width={730}
         height={250}
         data={Object.entries(period).map(([time, amount]) => ({
-          time: time.split(" ")[1],
+          time,
           amount,
         }))}
       >
