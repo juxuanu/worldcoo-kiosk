@@ -1,59 +1,69 @@
 import {
-  AreaChart,
-  Area,
   XAxis,
   Tooltip,
   ResponsiveContainer,
   BarChart,
   CartesianGrid,
   YAxis,
-  Legend,
   Bar,
   ReferenceLine,
 } from "recharts";
-import { $donations } from "./store.ts";
+import { $donation } from "./store.ts";
 import { useStore } from "@nanostores/react";
+import { useEffect, useState } from "react";
 
 const padStart = (number: number) => number.toString().padStart(2, "0");
+const getYYYYMMDD = (date: Date) =>
+  `${date.getFullYear()}-${padStart(date.getMonth() + 1)}-${padStart(date.getDate())}`;
 
 export default function Chart() {
-  const donations = useStore($donations);
-
   const now = new Date();
-  const thisYear = now.getFullYear();
-  const thisMonth = now.getMonth() + 1;
-  const thisDate = now.getDate();
-  const hours = [...Array(24)].map((_, i) => i);
-  const every10min = [...Array(6)].map((_, i) => i * 10);
 
-  const data = hours
-    .map((hour) => every10min.map((minute) => ({ hour, minute })))
-    .flat()
-    .map(({ hour, minute }) => ({
-      time:
-        `${thisYear}-${padStart(thisMonth)}-${padStart(thisDate)}` +
-        ` ${padStart(hour)}:${padStart(minute)}` +
-        `-${padStart(minute + 10 === 60 ? hour + 1 : hour)}:${padStart(minute + 10 === 60 ? 0 : minute + 10)}`,
-      amount: donations
-        .filter((donation) => {
-          const date = new Date(donation.date);
-          return (
-            date.getFullYear() === thisYear &&
-            date.getMonth() + 1 === thisMonth &&
-            date.getDate() === thisDate &&
-            date.getHours() === hour &&
-            date.getMinutes() >= minute &&
-            date.getMinutes() < minute + 10
-          );
-        })
-        .reduce((acc, cur) => parseFloat((acc + cur.amount).toFixed(2)), 0),
-    }));
+  const [period, setPeriod] = useState<Record<string, number>>(
+    JSON.parse(localStorage.getItem(`period-${getYYYYMMDD(now)}`) ?? "{}"),
+  );
+  const donation = useStore($donation);
+
+  useEffect(() => {
+    if (!donation) return;
+
+    const date = new Date(donation.date);
+    const hour = date.getHours();
+    const minutesOnBlockOf10 = Math.floor(date.getMinutes() / 10) * 10;
+
+    const periodKey =
+      `${padStart(hour)}:${padStart(minutesOnBlockOf10)}` +
+      `-${padStart(minutesOnBlockOf10 + 10 === 60 ? hour + 1 : hour)}` +
+      `:${padStart(minutesOnBlockOf10 + 10 === 60 ? 0 : minutesOnBlockOf10 + 10)}`;
+
+    const updatedPeriod = {
+      ...period,
+      [periodKey]: period[periodKey]
+        ? (Math.round(period[periodKey] * 100) +
+            Math.round(donation.amount * 100)) /
+          100
+        : donation.amount,
+    };
+
+    setPeriod(updatedPeriod);
+    localStorage.setItem(
+      `period-${getYYYYMMDD(date)}`,
+      JSON.stringify(updatedPeriod),
+    );
+  }, [donation]);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart width={730} height={250} data={data}>
+      <BarChart
+        width={730}
+        height={250}
+        data={Object.entries(period).map(([time, amount]) => ({
+          time,
+          amount,
+        }))}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(0 0 0 / 15%)" />
-        <XAxis dataKey="time" display="none" />
+        <XAxis dataKey="time" />
         <YAxis />
         <Tooltip />
         <ReferenceLine x={`2024-01-24 06:00-06:10`} stroke="#f18f45" />
