@@ -22,9 +22,16 @@ const baseTotal = 17_472_152.23;
     />
     <div
       id="counter"
-      class="font-bold text-[12rem] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
+      class="font-bold text-5xl 2xl:text-[14rem] size-fit text-[#f18f45] text-center tracking-tighter mt-auto text-nowrap"
     >
-      <span id="totalCounter" data-total={baseTotal}>{baseTotal.toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> €
+      <span id="totalCounter" data-total={baseTotal}
+        >{
+          baseTotal.toLocaleString("ca-ES", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        }</span
+      > €
     </div>
 
     <div class="mt-auto mr-12 h-96 w-full">
@@ -51,7 +58,7 @@ const baseTotal = 17_472_152.23;
     separator: ".",
     decimal: ",",
     plugin: new Odometer({ lastDigitDelay: 0 }),
-    duration: 0.05
+    duration: 0.05,
   });
 
   if (!counter.error) {
@@ -110,7 +117,6 @@ const baseTotal = 17_472_152.23;
             new Date(d.date).getTime() - now.getTime(),
           ),
         );
-        ``;
       });
 
     await Promise.all([
@@ -122,6 +128,7 @@ const baseTotal = 17_472_152.23;
 
 <style is:global>
   @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+
   body {
     font-family: "Quicksand", sans-serif;
   }
@@ -136,21 +143,22 @@ const baseTotal = 17_472_152.23;
   }
 
   #counter::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -2px; /* Avoid floating point number artifacts on responsive */
     bottom: -2px; /* Avoid floating point number artifacts on responsive */
     left: -40px;
     right: -40px;
-    box-shadow: inset 0px 0px 10px 10px #fae7c7;
+    box-shadow: inset 0 0 10px 10px #fae7c7;
   }
 
   @media screen and (max-width: 1024px) {
     .odometer-numbers {
       padding: 4px;
     }
+
     #counter::after {
-      box-shadow: inset 0px 0px 4px 4px #fae7c7;
+      box-shadow: inset 0 0 4px 4px #fae7c7;
     }
   }
 </style>
